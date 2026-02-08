@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Betting</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Football Betting Market</h1>
+
+        <!-- Current Prices -->
+        <div class="prices">
+            <h2>Current Odds</h2>
+            <table class="odds-table">
+                <thead>
+                    <tr>
+                        <th>Outcome</th>
+                        <th>Odds</th>
+                        <th>Probability</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Home</td>
+                        <td><span id="home-odds">--</span></td>
+                        <td><span id="home-probability">--</span></td>
+                        <td><span id="home-price-table">--</span></td>
+                    </tr>
+                    <tr>
+                        <td>Draw</td>
+                        <td><span id="draw-odds">--</span></td>
+                        <td><span id="draw-probability">--</span></td>
+                        <td><span id="draw-price-table">--</span></td>
+                    </tr>
+                    <tr>
+                        <td>Away</td>
+                        <td><span id="away-odds">--</span></td>
+                        <td><span id="away-probability">--</span></td>
+                        <td><span id="away-price-table">--</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Token Balances -->
+        <div class="balances">
+            <h2>Token Balances</h2>
+            <table class="balances-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Me</th>
+                        <th>Bot</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Home</td>
+                        <td><span id="me-home">--</span></td>
+                        <td><span id="bot-home">--</span></td>
+                    </tr>
+                    <tr>
+                        <td>Draw</td>
+                        <td><span id="me-draw">--</span></td>
+                        <td><span id="bot-draw">--</span></td>
+                    </tr>
+                    <tr>
+                        <td>Away</td>
+                        <td><span id="me-away">--</span></td>
+                        <td><span id="bot-away">--</span></td>
+                    </tr>
+                    <tr>
+                        <td>Spent</td>
+                        <td><span id="me-spent">--</span></td>
+                        <td><span id="bot-spent">--</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Bet Form -->
+        <div class="bet-form">
+            <h2>Place a Bet</h2>
+            <form id="bet-form">
+                <label for="outcome">Outcome:</label>
+                <select id="outcome" name="outcome">
+                    <option value="Home">Home</option>
+                    <option value="Draw">Draw</option>
+                    <option value="Away">Away</option>
+                </select>
+                <label for="stake">Stake:</label>
+                <input type="number" id="stake" name="stake" min="0" step="any" required>
+                <button type="submit">Place Bet</button>
+            </form>
+        <div class="bet-preview">
+            <div class="preview-field">
+                <label>Tokens Received:</label>
+                <span id="tokens-received">--</span>
+            </div>
+            <div class="preview-field">
+                <label>Token Price After Bet:</label>
+                <span id="token-price-after">--</span>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
