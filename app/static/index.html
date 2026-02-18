@@ -1,113 +1,54 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Football Betting</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coin Betting Competition</title>
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-    <div class="container">
-        <h1>Football Betting Market</h1>
-
-        <!-- Current Prices -->
-        <div class="prices">
-            <h2>Current Odds</h2>
-            <table class="odds-table">
-                <thead>
-                    <tr>
-                        <th>Outcome</th>
-                        <th>Odds</th>
-                        <th>Probability</th>
-                        <th>Price</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Home</td>
-                        <td><span id="home-odds">--</span></td>
-                        <td><span id="home-probability">--</span></td>
-                        <td><span id="home-price-table">--</span></td>
-                    </tr>
-                    <tr>
-                        <td>Draw</td>
-                        <td><span id="draw-odds">--</span></td>
-                        <td><span id="draw-probability">--</span></td>
-                        <td><span id="draw-price-table">--</span></td>
-                    </tr>
-                    <tr>
-                        <td>Away</td>
-                        <td><span id="away-odds">--</span></td>
-                        <td><span id="away-probability">--</span></td>
-                        <td><span id="away-price-table">--</span></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Token Balances -->
-        <div class="balances">
-            <h2>Token Balances</h2>
-            <table class="balances-table">
-                <thead>
-                    <tr>
-                        <th></th>
-                        <th>Me</th>
-                        <th>Bot</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Home</td>
-                        <td><span id="me-home">--</span></td>
-                        <td><span id="bot-home">--</span></td>
-                    </tr>
-                    <tr>
-                        <td>Draw</td>
-                        <td><span id="me-draw">--</span></td>
-                        <td><span id="bot-draw">--</span></td>
-                    </tr>
-                    <tr>
-                        <td>Away</td>
-                        <td><span id="me-away">--</span></td>
-                        <td><span id="bot-away">--</span></td>
-                    </tr>
-                    <tr>
-                        <td>Spent</td>
-                        <td><span id="me-spent">--</span></td>
-                        <td><span id="bot-spent">--</span></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Bet Form -->
-        <div class="bet-form">
-            <h2>Place a Bet</h2>
-            <form id="bet-form">
-                <label for="outcome">Outcome:</label>
-                <select id="outcome" name="outcome">
-                    <option value="Home">Home</option>
-                    <option value="Draw">Draw</option>
-                    <option value="Away">Away</option>
-                </select>
-                <label for="stake">Stake:</label>
-                <input type="number" id="stake" name="stake" min="0" step="any" required>
-                <button type="submit">Place Bet</button>
-            </form>
-        <div class="bet-preview">
-            <div class="preview-field">
-                <label>Tokens Received:</label>
-                <span id="tokens-received">--</span>
-            </div>
-            <div class="preview-field">
-                <label>Token Price After Bet:</label>
-                <span id="token-price-after">--</span>
-            </div>
-        </div>
-        </div>
+  <main>
+    <h1>Coin Betting Competition</h1>
+    <div class="controls">
+      <button id="stepBtn">Continue sequence</button>
+      <button id="newCoinBtn">New coin</button>
+      <button id="dryFlipBtn">Dry flip</button>
     </div>
 
-    <script src="script.js"></script>
+    <section class="grid">
+      <div class="card">
+        <h2>Coin & Observations</h2>
+        <p><strong>True p(heads):</strong> <span id="trueP">-</span></p>
+        <p><strong>Heads:</strong> <span id="heads">0</span></p>
+        <p><strong>Tails:</strong> <span id="tails">0</span></p>
+        <p><strong>Flip #:</strong> <span id="flipIndex">0</span></p>
+        <p><strong>Phase:</strong> <span id="phase">-</span></p>
+      </div>
+
+      <div class="card">
+        <h2>Bankrolls</h2>
+        <p><strong>Algorithm 1 (freq+Kelly):</strong> <span id="bank1">0</span></p>
+        <p><strong>Algorithm 2 (Bayes+Bayes-Kelly):</strong> <span id="bank2">0</span></p>
+      </div>
+
+      <div class="card">
+        <h2>AMM</h2>
+        <p><strong>Head reserve:</strong> <span id="ammHead">0</span></p>
+        <p><strong>Tail reserve:</strong> <span id="ammTail">0</span></p>
+      </div>
+
+      <div class="card wide">
+        <h2>Pending bets (current round)</h2>
+        <pre id="bets">[]</pre>
+      </div>
+
+      <div class="card wide">
+        <h2>Last event</h2>
+        <p id="last">-</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/script.js"></script>
 </body>
 </html>

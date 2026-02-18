@@ -8,3 +8,6 @@ dependencies = [
     "fastapi>=0.128.5",
     "uvicorn>=0.40.0",
 ]
+
+[tool.uv]
+package = false
