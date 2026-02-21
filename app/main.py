@@ -34,6 +34,10 @@ class Simulator:
         self.amm_head = 100.0
         self.amm_tail = 100.0
 
+    def reset_amm(self) -> None:
+        self.amm_head = 100.0
+        self.amm_tail = 100.0
+
     def state(self) -> dict:
         return {
             "true_p_heads": self.true_p_heads,
@@ -61,6 +65,7 @@ class Simulator:
         self.pending_bets = []
         self.round_index += 1
         self.phase = "betting"
+        self.reset_amm()
         self.last_result = f"Flip={outcome}. Settled {settled} bets."
         return self.state()
 
