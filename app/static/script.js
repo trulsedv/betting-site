@@ -11,6 +11,7 @@ function render(state) {
   document.getElementById('tails').textContent = state.tails;
   document.getElementById('flipIndex').textContent = state.flip_index;
   document.getElementById('phase').textContent = state.phase;
+  document.getElementById('nextBettor').textContent = state.next_bettor;
 
   document.getElementById('bank1').textContent = fmt(state.bankroll.algo1, 2);
   document.getElementById('bank2').textContent = fmt(state.bankroll.algo2, 2);
@@ -25,16 +26,16 @@ async function refresh() {
   render(await callApi('/api/state'));
 }
 
-document.getElementById('stepBtn').addEventListener('click', async () => {
-  render(await callApi('/api/step', 'POST'));
+document.getElementById('nextBetBtn').addEventListener('click', async () => {
+  render(await callApi('/api/next-bet', 'POST'));
+});
+
+document.getElementById('flipCoinBtn').addEventListener('click', async () => {
+  render(await callApi('/api/flip-coin', 'POST'));
 });
 
 document.getElementById('newCoinBtn').addEventListener('click', async () => {
   render(await callApi('/api/new-coin', 'POST'));
-});
-
-document.getElementById('dryFlipBtn').addEventListener('click', async () => {
-  render(await callApi('/api/dry-flips?n=1', 'POST'));
 });
 
 refresh();

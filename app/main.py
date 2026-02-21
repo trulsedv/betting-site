@@ -26,9 +26,9 @@ class Simulator:
         self.tails = 0
         self.flip_index = 0
         self.round_index = 0
-        self.starting_algo = 1
+        self.next_bettor = "algo1"
         self.pending_bets: list[Bet] = []
-        self.phase = "initial_flip"
+        self.phase = "betting"
         self.bankroll = {"algo1": 1000.0, "algo2": 1000.0}
         self.last_result = ""
         self.amm_head = 100.0
@@ -42,46 +42,27 @@ class Simulator:
             "flip_index": self.flip_index,
             "round_index": self.round_index,
             "phase": self.phase,
+            "next_bettor": self.next_bettor,
             "bankroll": self.bankroll,
             "amm": {"head": self.amm_head, "tail": self.amm_tail},
             "pending_bets": [asdict(b) for b in self.pending_bets],
             "last_result": self.last_result,
         }
 
-    def step(self) -> dict:
-        if self.phase == "initial_flip":
-            self._coin_flip(settle=False)
-            self.phase = "bet_1"
-            self.last_result = "Initial flip done (no bets)."
-            return self.state()
-
-        if self.phase.startswith("bet_"):
-            order = self._bet_order_for_round()
-            idx = int(self.phase.split("_")[1]) - 1
-            algo = order[idx]
-            self._place_bet(algo)
-            self.phase = "bet_2" if idx == 0 else "flip_settle"
-            return self.state()
-
-        if self.phase == "flip_settle":
-            outcome = self._coin_flip(settle=True)
-            self.round_index += 1
-            self.starting_algo = 2 if self.starting_algo == 1 else 1
-            self.phase = "bet_1"
-            self.last_result = f"Flip={outcome}. Settled {len(self.pending_bets)} bets."
-            self.pending_bets = []
-            return self.state()
-
+    def next_bet(self) -> dict:
+        algo = self.next_bettor
+        self._place_bet(algo)
+        self.next_bettor = "algo2" if algo == "algo1" else "algo1"
         return self.state()
 
-    def dry_flips(self, n: int = 1) -> dict:
-        for _ in range(max(1, n)):
-            self._coin_flip(settle=False)
-        self.last_result = f"Dry flips executed: {max(1, n)}"
+    def flip_coin(self) -> dict:
+        outcome = self._coin_flip(settle=True)
+        settled = len(self.pending_bets)
+        self.pending_bets = []
+        self.round_index += 1
+        self.phase = "betting"
+        self.last_result = f"Flip={outcome}. Settled {settled} bets."
         return self.state()
-
-    def _bet_order_for_round(self) -> list[str]:
-        return ["algo1", "algo2"] if self.starting_algo == 1 else ["algo2", "algo1"]
 
     def _coin_flip(self, settle: bool) -> str:
         outcome = "heads" if random.random() < self.true_p_heads else "tails"
@@ -147,9 +128,9 @@ async def get_state():
     return sim.state()
 
 
-@app.post("/api/step")
-async def step():
-    return sim.step()
+@app.post("/api/next-bet")
+async def next_bet():
+    return sim.next_bet()
 
 
 @app.post("/api/new-coin")
@@ -158,6 +139,6 @@ async def new_coin():
     return sim.state()
 
 
-@app.post("/api/dry-flips")
-async def dry_flips(n: int = 1):
-    return sim.dry_flips(n=n)
+@app.post("/api/flip-coin")
+async def flip_coin():
+    return sim.flip_coin()
