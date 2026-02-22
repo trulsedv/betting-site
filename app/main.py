@@ -49,6 +49,9 @@ class Simulator:
             "next_bettor": self.next_bettor,
             "bankroll": self.bankroll,
             "amm": {"head": self.amm_head, "tail": self.amm_tail},
+            "amm_implied_p_heads": self.amm_head / (self.amm_head + self.amm_tail),
+            "algo1_estimate": self._estimate_p_head("algo1"),
+            "algo2_estimate": self._estimate_p_head("algo2"),
             "pending_bets": [asdict(b) for b in self.pending_bets],
             "last_result": self.last_result,
         }

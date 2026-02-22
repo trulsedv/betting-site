@@ -12,6 +12,9 @@ function render(state) {
   document.getElementById('flipIndex').textContent = state.flip_index;
   document.getElementById('phase').textContent = state.phase;
   document.getElementById('nextBettor').textContent = state.next_bettor;
+  document.getElementById('ammImpP').textContent = state.amm_implied_p_heads?.toFixed(4) || '-';
+  document.getElementById('algo1Est').textContent = state.algo1_estimate?.toFixed(4) || '-';
+  document.getElementById('algo2Est').textContent = state.algo2_estimate?.toFixed(4) || '-';
 
   document.getElementById('bank1').textContent = fmt(state.bankroll.algo1, 2);
   document.getElementById('bank2').textContent = fmt(state.bankroll.algo2, 2);
