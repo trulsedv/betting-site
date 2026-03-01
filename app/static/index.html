@@ -9,46 +9,282 @@
 <body>
   <main>
     <h1>Coin Betting Competition</h1>
-    <div class="controls">
-      <button id="nextBetBtn">Next bet</button>
-      <button id="flipCoinBtn">Flip coin</button>
-      <button id="newCoinBtn">New coin</button>
-    </div>
 
-    <section class="grid">
+    <section class="layout-split">
+      <div class="top-grid">
+        <div class="card">
+        <h2>Coin</h2>
+        <table class="table-coin">
+          <thead>
+            <tr>
+              <th>Outcome</th>
+              <th>Actual probability</th>
+              <th>Occurrence count</th>
+              <th>Implied probability</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Heads</td>
+              <td id="coinActualHeads">-</td>
+              <td id="coinCountHeads">0</td>
+              <td id="coinImpliedHeads">-</td>
+            </tr>
+            <tr>
+              <td>Tails</td>
+              <td id="coinActualTails">-</td>
+              <td id="coinCountTails">0</td>
+              <td id="coinImpliedTails">-</td>
+            </tr>
+            <tr>
+              <td>Sum</td>
+              <td id="coinActualSum">-</td>
+              <td id="coinCountSum">0</td>
+              <td id="coinImpliedSum">-</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="controls controls-stack">
+          <button id="resetBtn">Reset</button>
+          <button id="testTossBtn">Test toss</button>
+          <button id="eventTossBtn">Event toss</button>
+          <div class="outcome-box" aria-live="polite">
+            <span class="outcome-label">Outcome</span>
+            <span id="tossOutcome" class="outcome-value">-</span>
+          </div>
+        </div>
+        </div>
+
+        <div class="card">
+        <h2>Market</h2>
+
+        <table class="table-market-prices">
+          <thead>
+            <tr>
+              <th>Outcome</th>
+              <th>Price</th>
+              <th>Price derivative</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Heads</td>
+              <td id="marketPriceHeads">-</td>
+              <td id="marketDerivativeHeads">-</td>
+            </tr>
+            <tr>
+              <td>Tails</td>
+              <td id="marketPriceTails">-</td>
+              <td id="marketDerivativeTails">-</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Balances</h3>
+        <table class="table-balances">
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Token balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Heads</td><td id="marketBalanceHeads">0</td></tr>
+            <tr><td>Tails</td><td id="marketBalanceTails">0</td></tr>
+            <tr><td>Money</td><td id="marketBalanceMoney">0</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <div class="bottom-grid">
+        <div class="card">
+        <h2>Algorithm 1</h2>
+        <h3>Estimations</h3>
+        <div class="estimation-area">
+          <table class="table-algo-estimate">
+            <thead>
+              <tr>
+                <th>Outcome</th>
+                <th>Estimated probability</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Heads</td>
+                <td id="algo1EstHeads">-</td>
+              </tr>
+              <tr>
+                <td>Tails</td>
+                <td id="algo1EstTails">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>Trades</h3>
+        <table class="table-algo-trades">
+          <thead>
+            <tr>
+              <th rowspan="2">Outcome</th>
+              <th colspan="3">Buy</th>
+              <th colspan="3">Sell</th>
+            </tr>
+            <tr>
+              <th>Calculated stake</th>
+              <th>Tokens to be received</th>
+              <th>Trade</th>
+              <th>Money to be received</th>
+              <th>Calculated tokens to sell</th>
+              <th>Trade</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Heads</td>
+              <td id="algo1BuyStakeHeads">0</td>
+              <td id="algo1BuyTokensHeads">0</td>
+              <td><button id="algo1BuyHeadsBtn">Trade</button></td>
+              <td id="algo1SellMoneyHeads">0</td>
+              <td id="algo1SellTokensHeads">0</td>
+              <td><button id="algo1SellHeadsBtn">Trade</button></td>
+            </tr>
+            <tr>
+              <td>Tails</td>
+              <td id="algo1BuyStakeTails">0</td>
+              <td id="algo1BuyTokensTails">0</td>
+              <td><button id="algo1BuyTailsBtn">Trade</button></td>
+              <td id="algo1SellMoneyTails">0</td>
+              <td id="algo1SellTokensTails">0</td>
+              <td><button id="algo1SellTailsBtn">Trade</button></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Balances</h3>
+        <table class="table-balances">
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Token balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Heads</td><td id="algo1BalanceHeads">0</td></tr>
+            <tr><td>Tails</td><td id="algo1BalanceTails">0</td></tr>
+            <tr><td>Money</td><td id="algo1BalanceMoney">0</td></tr>
+          </tbody>
+        </table>
+        </div>
+
+        <div class="card">
+        <h2>Algorithm 2</h2>
+        <h3>Estimations</h3>
+        <div class="estimation-area estimation-figure-wrap">
+          <svg id="algo2DistributionPlot" class="estimation-figure" viewBox="0 0 560 280" role="img" aria-label="Algorithm 2 estimated probability distributions for heads and tails">
+            <rect x="0" y="0" width="560" height="280" fill="#0b1220"></rect>
+
+            <line x1="55" y1="20" x2="55" y2="235" class="axis-line"></line>
+            <line x1="55" y1="235" x2="535" y2="235" class="axis-line"></line>
+
+            <text x="295" y="265" class="axis-label">Probability of outcome (x)</text>
+            <text x="16" y="130" class="axis-label" transform="rotate(-90 16 130)">Estimated probability density (y)</text>
+
+            <text x="50" y="250" class="tick-label">0.0</text>
+            <text x="285" y="250" class="tick-label">0.5</text>
+            <text x="525" y="250" class="tick-label">1.0</text>
+
+            <path id="algo2HeadPdfPath" class="line-heads" d=""></path>
+            <path id="algo2TailPdfPath" class="line-tails" d=""></path>
+          </svg>
+
+          <div class="plot-legend">
+            <span><i class="legend-swatch heads"></i> Heads distribution</span>
+            <span><i class="legend-swatch tails"></i> Tails distribution</span>
+          </div>
+        </div>
+
+        <h3>Trades</h3>
+        <table class="table-algo-trades">
+          <thead>
+            <tr>
+              <th rowspan="2">Outcome</th>
+              <th colspan="3">Buy</th>
+              <th colspan="3">Sell</th>
+            </tr>
+            <tr>
+              <th>Calculated stake</th>
+              <th>Tokens to be received</th>
+              <th>Trade</th>
+              <th>Money to be received</th>
+              <th>Calculated tokens to sell</th>
+              <th>Trade</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Heads</td>
+              <td id="algo2BuyStakeHeads">0</td>
+              <td id="algo2BuyTokensHeads">0</td>
+              <td><button id="algo2BuyHeadsBtn">Trade</button></td>
+              <td id="algo2SellMoneyHeads">0</td>
+              <td id="algo2SellTokensHeads">0</td>
+              <td><button id="algo2SellHeadsBtn">Trade</button></td>
+            </tr>
+            <tr>
+              <td>Tails</td>
+              <td id="algo2BuyStakeTails">0</td>
+              <td id="algo2BuyTokensTails">0</td>
+              <td><button id="algo2BuyTailsBtn">Trade</button></td>
+              <td id="algo2SellMoneyTails">0</td>
+              <td id="algo2SellTokensTails">0</td>
+              <td><button id="algo2SellTailsBtn">Trade</button></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Balances</h3>
+        <table class="table-balances">
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Token balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Heads</td><td id="algo2BalanceHeads">0</td></tr>
+            <tr><td>Tails</td><td id="algo2BalanceTails">0</td></tr>
+            <tr><td>Money</td><td id="algo2BalanceMoney">0</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="footer-grid">
+      <section class="status">
+        <h2>Event log</h2>
+        <ul id="eventLog" class="event-log">
+          <li>-</li>
+        </ul>
+      </section>
+
       <div class="card">
-        <h2>Coin & Observations</h2>
-        <p><strong>True p(heads):</strong> <span id="trueP">-</span></p>
-        <p><strong>Heads:</strong> <span id="heads">0</span></p>
-        <p><strong>Tails:</strong> <span id="tails">0</span></p>
-        <p><strong>Flip #:</strong> <span id="flipIndex">0</span></p>
-        <p><strong>Phase:</strong> <span id="phase">-</span></p>
-        <p><strong>Next bettor:</strong> <span id="nextBettor">-</span></p>
-        <p><strong>AMM implied p(heads):</strong> <span id="ammImpP">-</span></p>
-        <p><strong>Algo1 estimate:</strong> <span id="algo1Est">-</span></p>
-        <p><strong>Algo2 estimate:</strong> <span id="algo2Est">-</span></p>
-      </div>
-
-      <div class="card">
-        <h2>Bankrolls</h2>
-        <p><strong>Algorithm 1 (freq+Kelly):</strong> <span id="bank1">0</span></p>
-        <p><strong>Algorithm 2 (Bayes+Bayes-Kelly):</strong> <span id="bank2">0</span></p>
-      </div>
-
-      <div class="card">
-        <h2>AMM</h2>
-        <p><strong>Head reserve:</strong> <span id="ammHead">0</span></p>
-        <p><strong>Tail reserve:</strong> <span id="ammTail">0</span></p>
-      </div>
-
-      <div class="card wide">
-        <h2>Pending bets (current round)</h2>
-        <pre id="bets">[]</pre>
-      </div>
-
-      <div class="card wide">
-        <h2>Last event</h2>
-        <p id="last">-</p>
+        <h2>Market maker</h2>
+        <table class="table-balances">
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Token balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>Heads</td><td id="mmBalanceHeads">0</td></tr>
+            <tr><td>Tails</td><td id="mmBalanceTails">0</td></tr>
+            <tr><td>Money</td><td id="mmBalanceMoney">0</td></tr>
+          </tbody>
+        </table>
       </div>
     </section>
   </main>
