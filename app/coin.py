@@ -10,8 +10,8 @@ class CoinProcess:
 
     def __init__(self) -> None:
         """Initialize and sample a fresh hidden probability."""
-        self.reset()
         self.rng = SystemRandom()
+        self.reset()
 
     def reset(self) -> None:
         """Resample hidden probabilities and clear occurrence counters."""

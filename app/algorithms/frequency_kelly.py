@@ -8,14 +8,15 @@ if TYPE_CHECKING:
     from app.amm import ConstantProductYesNoAMM
 
 
-class FrequencyKellyStrategy:
+class FrequencyKellyTrader:
     """Algorithm 1: observed-frequency estimate + full Kelly sizing."""
 
-    def __init__(self, money: float) -> None:
+    def __init__(self, money: float, kelly_fraction: float) -> None:
         """Initialize balances and observation counters."""
         self.observations = {"heads": 0, "tails": 0}
         self.balances = {"money": money, "heads": 0.0, "tails": 0.0}
         self.valid_sides = {"heads", "tails"}
+        self.kelly_fraction = kelly_fraction
 
     def observation(self, side: str) -> None:
         """Register one observed outcome."""
@@ -64,5 +65,5 @@ class FrequencyKellyStrategy:
             money_out = (p * hm - (1 - p) * tm) / (hm / m + (1 - p))
         if side == "tails":
             money_out = (p * tm - (1 - p) * hm) / (tm / m + (1 - p))
-
+        money_out *= self.kelly_fraction
         return money_out

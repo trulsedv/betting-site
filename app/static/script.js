@@ -37,85 +37,6 @@ function renderEventLog(events) {
   }
 }
 
-function logGamma(z) {
-  const c = [
-    676.5203681218851,
-    -1259.1392167224028,
-    771.32342877765313,
-    -176.61502916214059,
-    12.507343278686905,
-    -0.13857109526572012,
-    9.9843695780195716e-6,
-    1.5056327351493116e-7,
-  ];
-
-  if (z < 0.5) {
-    return Math.log(Math.PI) - Math.log(Math.sin(Math.PI * z)) - logGamma(1 - z);
-  }
-
-  let x = 0.99999999999980993;
-  const t = z - 1;
-  for (let i = 0; i < c.length; i += 1) {
-    x += c[i] / (t + i + 1);
-  }
-
-  const g = 7;
-  const y = t + g + 0.5;
-  return 0.5 * Math.log(2 * Math.PI) + (t + 0.5) * Math.log(y) - y + Math.log(x);
-}
-
-function betaPdf(x, a, b) {
-  if (x <= 0 || x >= 1) {
-    return 0;
-  }
-
-  const logBeta = logGamma(a) + logGamma(b) - logGamma(a + b);
-  const logPdf = (a - 1) * Math.log(x) + (b - 1) * Math.log(1 - x) - logBeta;
-  return Math.exp(logPdf);
-}
-
-function buildPath(xs, ys, xMin, xMax, yMax, plotBox) {
-  const { left, top, width, height } = plotBox;
-  let d = '';
-
-  for (let i = 0; i < xs.length; i += 1) {
-    const x = left + ((xs[i] - xMin) / (xMax - xMin)) * width;
-    const y = top + height - (ys[i] / yMax) * height;
-    d += `${i === 0 ? 'M' : ' L'}${x.toFixed(2)} ${y.toFixed(2)}`;
-  }
-
-  return d;
-}
-
-function renderAlgo2Distribution(headCount, tailCount) {
-  const alphaHeads = headCount + 1;
-  const betaHeads = tailCount + 1;
-  const alphaTails = tailCount + 1;
-  const betaTails = headCount + 1;
-
-  const points = 140;
-  const eps = 1e-3;
-  const xs = [];
-  const headsYs = [];
-  const tailsYs = [];
-
-  for (let i = 0; i < points; i += 1) {
-    const x = eps + (i / (points - 1)) * (1 - 2 * eps);
-    xs.push(x);
-    headsYs.push(betaPdf(x, alphaHeads, betaHeads));
-    tailsYs.push(betaPdf(x, alphaTails, betaTails));
-  }
-
-  const yMax = Math.max(...headsYs, ...tailsYs, 1e-12);
-  const plotBox = { left: 55, top: 20, width: 480, height: 215 };
-
-  const headsPath = buildPath(xs, headsYs, 0, 1, yMax, plotBox);
-  const tailsPath = buildPath(xs, tailsYs, 0, 1, yMax, plotBox);
-
-  document.getElementById('algo2HeadPdfPath').setAttribute('d', headsPath);
-  document.getElementById('algo2TailPdfPath').setAttribute('d', tailsPath);
-}
-
 function renderAlgorithm(prefix, data) {
   setText(`${prefix}BalanceHeads`, fmtToken(data.balances.heads));
   setText(`${prefix}BalanceTails`, fmtToken(data.balances.tails));
@@ -165,8 +86,8 @@ function render(state) {
 
   setText('algo1EstHeads', fmtPct(state.algorithm1.estimate.heads));
   setText('algo1EstTails', fmtPct(state.algorithm1.estimate.tails));
-
-  renderAlgo2Distribution(state.coin.occurrence_count.heads, state.coin.occurrence_count.tails);
+  setText('algo2EstHeads', fmtPct(state.algorithm2.estimate.heads));
+  setText('algo2EstTails', fmtPct(state.algorithm2.estimate.tails));
 
   setText('mmBalanceHeads', fmtToken(state.market_maker.balances.heads));
   setText('mmBalanceTails', fmtToken(state.market_maker.balances.tails));

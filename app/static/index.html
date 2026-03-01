@@ -181,28 +181,25 @@
         <div class="card">
         <h2>Algorithm 2</h2>
         <h3>Estimations</h3>
-        <div class="estimation-area estimation-figure-wrap">
-          <svg id="algo2DistributionPlot" class="estimation-figure" viewBox="0 0 560 280" role="img" aria-label="Algorithm 2 estimated probability distributions for heads and tails">
-            <rect x="0" y="0" width="560" height="280" fill="#0b1220"></rect>
-
-            <line x1="55" y1="20" x2="55" y2="235" class="axis-line"></line>
-            <line x1="55" y1="235" x2="535" y2="235" class="axis-line"></line>
-
-            <text x="295" y="265" class="axis-label">Probability of outcome (x)</text>
-            <text x="16" y="130" class="axis-label" transform="rotate(-90 16 130)">Estimated probability density (y)</text>
-
-            <text x="50" y="250" class="tick-label">0.0</text>
-            <text x="285" y="250" class="tick-label">0.5</text>
-            <text x="525" y="250" class="tick-label">1.0</text>
-
-            <path id="algo2HeadPdfPath" class="line-heads" d=""></path>
-            <path id="algo2TailPdfPath" class="line-tails" d=""></path>
-          </svg>
-
-          <div class="plot-legend">
-            <span><i class="legend-swatch heads"></i> Heads distribution</span>
-            <span><i class="legend-swatch tails"></i> Tails distribution</span>
-          </div>
+        <div class="estimation-area">
+          <table class="table-algo-estimate">
+            <thead>
+              <tr>
+                <th>Outcome</th>
+                <th>Estimated probability</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Heads</td>
+                <td id="algo2EstHeads">-</td>
+              </tr>
+              <tr>
+                <td>Tails</td>
+                <td id="algo2EstTails">-</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         <h3>Trades</h3>
