@@ -16,7 +16,7 @@ $$ f^* = p - \frac{1 - p}{\frac{1}{P} - 1} $$
 
 In a market with an Automated Marked Maker the price/odds will change with the size of the stake. Staking $m$ money-tokens on an outcome happening will give the bettor $y$ yes-tokens.
 
-$$ y = Y_0 + m - \frac{Y_0 \cdot N_0}{N_0 + m} $$
+$$ y = m + Y_0 (1 - \frac{N_0}{N_0 + m}) $$
 
 Here $Y_0$ and $N_0$ are the balance of yes-tokens and no-tokens in the market before the bet. A yes-token will give a payout of 1 money-tokens if the outcome happen. This yields the following odds.
 

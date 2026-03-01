@@ -1,0 +1,16 @@
+preview = true
+line-length = 120
+
+[lint]
+select = [
+   "ALL"
+]
+ignore = [
+   "CPY",     # ignore missing-copyright-notice
+   "DOC",     # ignore pydoclint, still lints docstrings according to pydocstyle
+   "RET504",  # ignore assigning right before returning
+   "T20",     # ignore print statements
+]
+
+[lint.pydocstyle]
+convention = "pep257"

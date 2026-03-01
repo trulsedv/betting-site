@@ -20,7 +20,7 @@ $$ Y_0 \cdot N_0 = Y_1 \cdot N_1 $$
 
 $$ Y_0 \cdot N_0 = (Y_0 + m -y) \cdot (N_0 + m) $$
 
-$$ y = Y_0 + m - \frac{Y_0 \cdot N_0}{N_0 + m} $$
+$$ y = m + Y_0 (1 - \frac{N_0}{N_0 + m}) $$
 
 ## No-bet example
 

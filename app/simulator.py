@@ -1,24 +1,36 @@
+"""Core simulation engine coordinating coin, market, and trading algorithms."""
+
 from __future__ import annotations
+
+from typing import Any
 
 from pydantic import BaseModel
 
-from app.amm import ConstantProductYesNoAMM
 from app.algorithms import BayesianHalfKellyStrategy, FrequencyKellyStrategy
+from app.amm import ConstantProductYesNoAMM
 from app.coin import CoinProcess
+
+type Trader = FrequencyKellyStrategy | BayesianHalfKellyStrategy
 
 
 class TradeRequest(BaseModel):
+    """Request payload for a trade action."""
+
     algo: str
     side: str
     action: str
 
 
 class Simulator:
+    """Main simulation state and transition logic."""
+
     INITIAL_MARKET_MAKER_MONEY = 1e6
     INITIAL_MARKET_LIQUIDITY = 1e5
     INITIAL_TRADER_MONEY = 1e3
+    EVENT_LOG_LIMIT = 300
 
     def __init__(self) -> None:
+        """Initialize coin process, traders, market maker, and market state."""
         self.coin = CoinProcess()
         self.trader1 = FrequencyKellyStrategy(self.INITIAL_TRADER_MONEY)
         self.trader2 = BayesianHalfKellyStrategy(self.INITIAL_TRADER_MONEY)
@@ -32,29 +44,31 @@ class Simulator:
         self.last_toss_outcome = ""
 
     def reset_coin(self) -> None:
+        """Reset the coin process and reinitialize market liquidity."""
         self.coin.reset()
         self.trader1.reset_observations()
         self.trader2.reset_observations()
 
-        # there should be a payout part here for traders to get money for their heads and tails tokens (when resolution has not happend)
+        # There should be a payout phase here for unresolved token positions.
         self.initialize_market()
 
     def initialize_market(self) -> None:
+        """Create a new seeded market and debit market-maker cash."""
         self.market_maker["money"] -= self.INITIAL_MARKET_LIQUIDITY
         self.amm = ConstantProductYesNoAMM(self.INITIAL_MARKET_LIQUIDITY)
 
     def _set_result(self, message: str) -> None:
         self.last_result = message
         self.event_log.append(message)
-        if len(self.event_log) > 300:
-            self.event_log = self.event_log[-300:]
+        if len(self.event_log) > self.EVENT_LOG_LIMIT:
+            self.event_log = self.event_log[-self.EVENT_LOG_LIMIT :]
 
     def _sync_algo_states(self) -> None:
         for trader in (self.trader1, self.trader2):
             trader.observations["heads"] = self.coin.occurrences["heads"]
             trader.observations["tails"] = self.coin.occurrences["tails"]
 
-    def _get_trader(self, algo: str):
+    def _get_trader(self, algo: str) -> Trader | None:
         if algo == "algo1":
             return self.trader1
         if algo == "algo2":
@@ -84,7 +98,8 @@ class Simulator:
             },
         }
 
-    def state(self) -> dict:
+    def state(self) -> dict[str, Any]:
+        """Return a complete view of current simulation state."""
         market_prices = self._market_prices()
 
         return {
@@ -111,18 +126,19 @@ class Simulator:
         self.last_toss_outcome = outcome
         return outcome
 
-    def test_toss(self) -> dict:
+    def test_toss(self) -> dict[str, Any]:
+        """Toss coin without resolving the market and return state."""
         outcome = self._draw_outcome()
         self._set_result(f"Test toss={outcome}. No market settlement.")
         return self.state()
 
-    def event_toss(self) -> dict:
+    def event_toss(self) -> dict[str, Any]:
+        """Toss coin, resolve market payouts, reseed market, and return state."""
         outcome = self._draw_outcome()
         self.amm.resolve(outcome)
 
         payout = 0.0
-        for algo in ("algo1", "algo2"):
-            trader = self._get_trader(algo)
+        for trader in (self.trader1, self.trader2):
             payout_heads = self.amm.payout("heads", trader.balances["heads"])
             payout_tails = self.amm.payout("tails", trader.balances["tails"])
             algo_payout = payout_heads + payout_tails
@@ -140,35 +156,31 @@ class Simulator:
 
         self._set_result(
             f"Event toss={outcome}. Paid out {payout:.2f}. "
-            f"Returned {remaining_money:.2f} to market maker and re-seeded market."
+            f"Returned {remaining_money:.2f} to market maker and re-seeded market.",
         )
         return self.state()
 
-    def trade(self, algo: str, side: str, action: str) -> dict:
+    def trade(self, algo: str, side: str, action: str) -> dict[str, Any]:
+        """Validate and execute a buy or sell action, then return state."""
         trader = self._get_trader(algo)
         if trader is None:
             self._set_result(f"Invalid algo: {algo}")
-            return self.state()
-        if side not in ("heads", "tails"):
+        elif side not in {"heads", "tails"}:
             self._set_result(f"Invalid side: {side}")
-            return self.state()
-        if action not in ("buy", "sell"):
+        elif action not in {"buy", "sell"}:
             self._set_result(f"Invalid action: {action}")
-            return self.state()
-
-        if action == "buy":
+        elif action == "buy":
             stake = self._calc_buy_stake(algo, side)
             if stake <= 0.0:
                 self._set_result(f"{algo} buy {side}: no edge, no trade.")
-                return self.state()
-            self._execute_buy(algo, side, stake)
-            return self.state()
-
-        tokens_to_sell = self._calc_sell_tokens(algo, side)
-        if tokens_to_sell <= 0.0:
-            self._set_result(f"{algo} sell {side}: no tokens to sell.")
-            return self.state()
-        self._execute_sell(algo, side, tokens_to_sell)
+            else:
+                self._execute_buy(algo, side, stake)
+        else:
+            tokens_to_sell = self._calc_sell_tokens(algo, side)
+            if tokens_to_sell <= 0.0:
+                self._set_result(f"{algo} sell {side}: no tokens to sell.")
+            else:
+                self._execute_sell(algo, side, tokens_to_sell)
         return self.state()
 
     def _algo_state(self, algo: str) -> dict:
