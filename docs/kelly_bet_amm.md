@@ -18,13 +18,26 @@ In a market with an Automated Marked Maker the price/odds will change with the s
 
 $$ y = m + Y_0 (1 - \frac{N_0}{N_0 + m}) $$
 
-Here $Y_0$ and $N_0$ are the balance of yes-tokens and no-tokens in the market before the bet. A yes-token will give a payout of 1 money-tokens if the outcome happen. This yields the following odds.
+To avoid repeated bets the criterion also needs to account for aleady placed bets. If the bettor already have placed bets for $m_0$ money-tokens, and own $Y_b$ yes-tokens and $N_b$ no-tokens, a bet on yes with a yes outcome will yield the followng money-tokens after resolution.
 
-$$ B = \frac{\mathrm{payout}}{\mathrm{stake}} = \frac{y}{m} = \frac{Y_0 + m - \frac{Y_0 \cdot N_0}{N_0 + m}}{m} $$
+$$ M_{b1y} = M_{b0} - m_0 + Y_b - m + y $$
 
-The optimal stake $m^* = f^*M$ can then be solved for.
+While a no outcome will yield the following.
 
-$$ f^* = \frac{m^*}{M} = p - \frac{1 - p}{\frac{Y_0 + m^* - \frac{Y_0 \cdot N_0}{N_0 + m^*}}{m^*} - 1} $$
+$$ M_{b1n} = M_{b0} - m_0 - N_b - m $$
 
+Changing these equations into a fraction of $M_{b0}$.
 
-$$ m^* = \frac{p Y_0 - (1 - p) N_0}{\frac{Y_0}{M} + (1 - p)} $$
+$$ \frac{M_{b1y}}{M_{b0}} = 1 - \frac{m_0}{M_{b0}} + \frac{Y_b}{M_{b0}} - \frac{m}{M_{b0}} + \frac{y}{M_{b0}} = 1 + r_y $$
+
+$$ \frac{M_{b1n}}{M_{b0}} = 1 - \frac{m_0}{M_{b0}} + \frac{N_b}{M_{b0}} - \frac{m}{M_{b0}} = 1 + r_n $$
+
+Assuming these fractional bets could be reapeated with the same odds $N = \infty$ times the expected growth rate would be as follows.
+
+$$ 1 + r = \left(\frac{M_{bNn}}{M_{b0}} \right)^{1/N} = \left(1 - \frac{m_0}{M_{b0}} + \frac{Y_b}{M_{b0}} - \frac{m}{M_{b0}} + \frac{y}{M_{b0}} \right)^{p} \left(1 - \frac{m_0}{M_{b0}} + \frac{N_b}{M_{b0}} - \frac{m}{M_{b0}} \right)^{1 - p} $$
+
+This is what the Kelly criterion is able to maximize for a "simple" bet with a simple expression. This now become much more complex.
+
+$$ m^* = \arg \max_{m} \, \left( \left(1 - \frac{m_0}{M_{b0}} + \frac{Y_b}{M_{b0}} - \frac{m}{M_{b0}} + \frac{m + Y_m (1 - \frac{N_m}{N_m + m})}{M_{b0}} \right)^{p} \left(1 - \frac{m_0}{M_{b0}} + \frac{N_b}{M_{b0}} - \frac{m}{M_{b0}} \right)^{1 - p} \right) $$
+
+This has been solved by sympy (see docs/derivations).
