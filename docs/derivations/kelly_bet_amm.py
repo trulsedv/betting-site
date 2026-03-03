@@ -1,5 +1,7 @@
+"""Derive the optimal stake inspired by the Kelly criterion, and store as pickle."""
+
 import pathlib
-import pickle
+import pickle  # noqa: S403
 
 import sympy as sp
 
@@ -31,13 +33,12 @@ solution_data = {
 }
 
 # Save the symbolic solution to multiple locations
-docs_path = pathlib.Path("docs/derivations/m_opt_solution.pkl")
-app_path = pathlib.Path("../../app/m_opt_solution.pkl")
+app_path = pathlib.Path("app/algorithms/m_opt_solution.pkl")
 
-with docs_path.open("wb") as f:
+with app_path.open("wb") as f:
     pickle.dump(solution_data, f)
 
-print(f"Symbolic solution saved to {docs_path} and {app_path}")
+print(f"Symbolic solution saved to {app_path}")
 
 # Convert the symbolic solution to a Python function for immediate use
 m_opt_func = sp.lambdify((m0, Mb0, Yb, Ym, Nm, Nb, p), solution, "numpy")

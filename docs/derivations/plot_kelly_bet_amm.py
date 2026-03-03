@@ -1,13 +1,15 @@
+"""Plot expected rate of return as a function of the stake and optimum stake."""
+
 import pathlib
-import pickle
+import pickle  # noqa: S403
 
 import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sp
 
 # Load the symbolic solution
-with pathlib.Path("docs/derivations/m_opt_solution.pkl").open("rb") as f:
-    solution_data = pickle.load(f)
+with pathlib.Path("app/algorithms/m_opt_solution.pkl").open("rb") as f:
+    solution_data = pickle.load(f)  # noqa: S301
 
 # Create the function from the symbolic solution
 m_opt_func = sp.lambdify(solution_data["parameters"], solution_data["symbolic_solution"], "numpy")
@@ -29,11 +31,12 @@ print(f"Numerical value of the solution: {solution_num}")
 
 
 # Define the function to plot
-def calculate_r(params, m_val):
+def calculate_r(params: dict, m_val: float) -> float:
+    """Compute $1+r$ for a given stake value."""
     y_val = m_val + params["Ym"] * (1 - params["Nm"] / (params["Nm"] + m_val))
-    A_val = 1 - params["m0"] / params["Mb0"] + params["Yb"] / params["Mb0"] - m_val / params["Mb0"] + y_val / params["Mb0"]
-    B_val = 1 - params["m0"] / params["Mb0"] + params["Nb"] / params["Mb0"] - m_val / params["Mb0"]
-    f_val = A_val ** params["p"] * B_val ** (1 - params["p"])
+    a_val = 1 - params["m0"] / params["Mb0"] + params["Yb"] / params["Mb0"] - m_val / params["Mb0"] + y_val / params["Mb0"]
+    b_val = 1 - params["m0"] / params["Mb0"] + params["Nb"] / params["Mb0"] - m_val / params["Mb0"]
+    f_val = a_val ** params["p"] * b_val ** (1 - params["p"])
     return f_val
 
 
@@ -51,6 +54,6 @@ if "solution_num" in locals():
 plt.xlabel("$m$", fontsize=12)
 plt.ylabel("$1+r$", fontsize=12)
 plt.title("Plot of $1+r$ vs $m$", fontsize=14)
-plt.grid(True)
+plt.grid(visible=True)
 plt.legend(fontsize=12)
 plt.show()
