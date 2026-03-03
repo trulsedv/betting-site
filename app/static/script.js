@@ -44,18 +44,12 @@ function renderAlgorithm(prefix, data) {
 
   setText(`${prefix}BuyStakeHeads`, fmtMoney(data.trades.heads.buy.stake));
   setText(`${prefix}BuyTokensHeads`, fmtToken(data.trades.heads.buy.tokens));
-  setText(`${prefix}SellMoneyHeads`, fmtMoney(data.trades.heads.sell.money));
-  setText(`${prefix}SellTokensHeads`, fmtToken(data.trades.heads.sell.tokens));
 
   setText(`${prefix}BuyStakeTails`, fmtMoney(data.trades.tails.buy.stake));
   setText(`${prefix}BuyTokensTails`, fmtToken(data.trades.tails.buy.tokens));
-  setText(`${prefix}SellMoneyTails`, fmtMoney(data.trades.tails.sell.money));
-  setText(`${prefix}SellTokensTails`, fmtToken(data.trades.tails.sell.tokens));
 
   setDisabled(`${prefix}BuyHeadsBtn`, data.trades.heads.buy.stake <= 0);
   setDisabled(`${prefix}BuyTailsBtn`, data.trades.tails.buy.stake <= 0);
-  setDisabled(`${prefix}SellHeadsBtn`, data.trades.heads.sell.tokens <= 0);
-  setDisabled(`${prefix}SellTailsBtn`, data.trades.tails.sell.tokens <= 0);
 }
 
 function render(state) {
@@ -118,12 +112,8 @@ document.getElementById('eventTossBtn').addEventListener('click', async () => {
 
 document.getElementById('algo1BuyHeadsBtn').addEventListener('click', () => trade('algo1', 'heads', 'buy'));
 document.getElementById('algo1BuyTailsBtn').addEventListener('click', () => trade('algo1', 'tails', 'buy'));
-document.getElementById('algo1SellHeadsBtn').addEventListener('click', () => trade('algo1', 'heads', 'sell'));
-document.getElementById('algo1SellTailsBtn').addEventListener('click', () => trade('algo1', 'tails', 'sell'));
 
 document.getElementById('algo2BuyHeadsBtn').addEventListener('click', () => trade('algo2', 'heads', 'buy'));
 document.getElementById('algo2BuyTailsBtn').addEventListener('click', () => trade('algo2', 'tails', 'buy'));
-document.getElementById('algo2SellHeadsBtn').addEventListener('click', () => trade('algo2', 'heads', 'sell'));
-document.getElementById('algo2SellTailsBtn').addEventListener('click', () => trade('algo2', 'tails', 'sell'));
 
 refresh();

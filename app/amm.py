@@ -23,28 +23,21 @@ class ConstantProductYesNoAMM:
 
     def __init__(self, money_tokens: float) -> None:
         """Initialize the market and seed symmetric liquidity."""
+        # TODO: Initialize at price using p factor
         self.resolution = None
-        self.seed(money_tokens)
+        self.balances = {"heads": money_tokens, "tails": money_tokens, "money": money_tokens}
         self.valid_sides = {"heads", "tails"}
-
-    def seed(self, money_tokens: float) -> None:
-        """Seed equal heads, tails, and money balances."""
-        seed = max(0.0, money_tokens)
-        self.balances = {"heads": seed, "tails": seed, "money": seed}
 
     def prices(self) -> dict[str, float]:
         """Return implied prices for heads and tails."""
         y = self.balances["heads"]
         n = self.balances["tails"]
-        total = y + n
-        if total <= 0.0:
-            return {"heads": 0.5, "tails": 0.5}
         return {
-            "heads": n / total,
-            "tails": y / total,
+            "heads": n / (y + n),
+            "tails": y / (y + n),
         }
 
-    def preview_buy(self, side: str, money_in: float) -> float:
+    def calc_token_out(self, side: str, money_in: float) -> float:
         """Preview token output for a buy without mutating balances."""
         if money_in <= 0.0:
             msg = "Invalid money_in. Must be positive."
@@ -62,7 +55,7 @@ class ConstantProductYesNoAMM:
             tokens_out = n + money_in - (y * n / (y + money_in))
         return tokens_out
 
-    def preview_sell(self, side: str, tokens_in: float) -> float:
+    def calc_money_out(self, side: str, tokens_in: float) -> float:
         """Preview money output for a sell without mutating balances."""
         if tokens_in <= 0.0:
             msg = "Invalid tokens_in. Must be positive."
@@ -82,7 +75,7 @@ class ConstantProductYesNoAMM:
 
     def buy(self, side: str, money_in: float) -> float:
         """Execute a buy and mutate market balances."""
-        tokens_out = self.preview_buy(side, money_in)
+        tokens_out = self.calc_token_out(side, money_in)
 
         self.balances["money"] += money_in
         self.balances["heads"] += money_in
@@ -92,7 +85,7 @@ class ConstantProductYesNoAMM:
 
     def sell(self, side: str, tokens_in: float) -> float:
         """Execute a sell and mutate market balances."""
-        money_out = self.preview_sell(side, tokens_in)
+        money_out = self.calc_money_out(side, tokens_in)
 
         self.balances["money"] -= money_out
         self.balances["heads"] -= money_out
@@ -106,6 +99,14 @@ class ConstantProductYesNoAMM:
 
     def payout(self, side: str, tokens: float) -> float:
         """Return payout for winning side tokens after resolution."""
-        if self.resolution is None or self.resolution != side:
+        if self.resolution is None:
+            prices = self.prices()
+            price = prices[side]
+            money_tokens = tokens * price
+            self.balances["money"] -= money_tokens
+            return money_tokens
+        if self.resolution != side:
             return 0.0
-        return tokens
+        money_tokens = tokens
+        self.balances["money"] -= money_tokens
+        return money_tokens

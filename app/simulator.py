@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 from pydantic import BaseModel
@@ -32,35 +33,82 @@ class Simulator:
     def __init__(self) -> None:
         """Initialize coin process, traders, market maker, and market state."""
         self.coin = CoinProcess()
-        self.trader1 = FrequencyKellyTrader(self.INITIAL_TRADER_MONEY, kelly_fraction=1.0)
-        self.trader2 = FrequencyKellyTrader(self.INITIAL_TRADER_MONEY, kelly_fraction=0.5)
+        self.trader1 = FrequencyKellyTrader("algo1", self.INITIAL_TRADER_MONEY, kelly_fraction=1.0)
+        self.trader2 = FrequencyKellyTrader("algo2", self.INITIAL_TRADER_MONEY, kelly_fraction=0.5)
 
         self.market_maker = {"money": self.INITIAL_MARKET_MAKER_MONEY}
-
-        self.initialize_market()
 
         self.last_result = ""
         self.event_log: list[str] = []
         self.last_toss_outcome = ""
 
-    def reset_coin(self) -> None:
-        """Reset the coin process and reinitialize market liquidity."""
-        self.coin.reset()
-        self.trader1.reset_observations()
-        self.trader2.reset_observations()
-
-        remaining_money = self.amm.balances.get("money", 0.0)
-        self.market_maker["money"] += remaining_money
-
-        # There should be a payout phase here for unresolved token positions.
-        self.initialize_market()
-
-    def initialize_market(self) -> None:
-        """Create a new seeded market and debit market-maker cash."""
         self.market_maker["money"] -= self.INITIAL_MARKET_LIQUIDITY
         self.amm = ConstantProductYesNoAMM(self.INITIAL_MARKET_LIQUIDITY)
 
-    def _set_result(self, message: str) -> None:
+    def reset_coin(self) -> None:
+        """Reset flow: clear market, reset observations, and initialize a new coin."""
+        self._clear_market()
+        self.trader1.reset_observations()
+        self.trader2.reset_observations()
+        self.coin.reset()
+        self._log_event("Reset complete: market cleared and coin reinitialized.")
+
+    def test_toss(self) -> dict[str, Any]:
+        """Toss coin without resolving the market and return state."""
+        outcome = self._draw_outcome()
+        self._log_event(f"Test toss={outcome}.")
+        return self.state()
+
+    def event_toss(self) -> dict[str, Any]:
+        """Toss coin, resolve market to outcome, clear market, and return state."""
+        outcome = self._draw_outcome()
+        self._log_event(f"Event toss={outcome}.")
+        self.amm.resolve(outcome)
+        self._clear_market()
+        return self.state()
+
+    def trade(self, algo: str, side: str, action: str) -> dict[str, Any]:  # noqa: ARG002
+        """Buy token flow: trader pays money, market outputs tokens, trader receives tokens."""
+        trader = self._get_trader(algo)
+
+        stake = trader.calculate_buy_money_out(side, self.amm)  # ty:ignore[unresolved-attribute]
+        trader.pay_for_tokens(stake)  # ty:ignore[unresolved-attribute]
+        tokens_out = self.amm.buy(side, stake)
+        trader.recieve_tokens(side, tokens_out)  # ty:ignore[unresolved-attribute]
+        self._log_event(f"{trader.name} bought {tokens_out:.4f} {side} tokens for {stake:.2f}.")  # ty:ignore[unresolved-attribute]
+
+        return self.state()
+
+    def _clear_market(self) -> None:
+        """Close current market positions and reopen with default liquidity."""
+        for trader in (self.trader1, self.trader2):
+            # Trader hands in their outcome tokens
+            tokens = trader.resolve_tokens()
+            payout = 0
+            for side in ("heads", "tails"):
+                if tokens[side] == 0:
+                    continue
+                # Market recieve outcome tokens and outputs money tokens
+                token_payout = self.amm.payout(side, tokens[side])
+                payout += token_payout
+                self._log_event(f"{trader.name} handed in {tokens[side]:.1f} {side} tokens for {token_payout:.1f} money tokens.")
+            # Traders recieve money tokens
+            trader.recieve_money(payout)
+
+        self.market_maker["money"] += self.amm.balances["money"]
+        self._log_event(f"Market maker withdrew {self.amm.balances['money']:.2f} money tokens, and closed the market.")
+        self.market_maker["money"] -= self.INITIAL_MARKET_LIQUIDITY
+        self.amm = ConstantProductYesNoAMM(self.INITIAL_MARKET_LIQUIDITY)
+        self._log_event(f"Market maker deposited {self.INITIAL_MARKET_LIQUIDITY:.2f} money tokens, and opened the market.")
+
+    def _draw_outcome(self) -> str:
+        outcome = self.coin.toss()
+        self.trader1.observation(outcome)
+        self.trader2.observation(outcome)
+        self.last_toss_outcome = outcome
+        return outcome
+
+    def _log_event(self, message: str) -> None:
         self.last_result = message
         self.event_log.append(message)
         if len(self.event_log) > self.EVENT_LOG_LIMIT:
@@ -72,6 +120,29 @@ class Simulator:
         if algo == "algo2":
             return self.trader2
         return None
+
+    def state(self) -> dict[str, Any]:
+        """Return a complete view of current simulation state."""
+        market_prices = self.amm.prices()
+
+        return {
+            "coin": self._coin_state(),
+            "market": {
+                "prices": {
+                    "heads": market_prices["heads"],
+                    "tails": market_prices["tails"],
+                    "heads_derivative": None,
+                    "tails_derivative": None,
+                },
+                "balances": self.amm.balances,
+            },
+            "algorithm1": self._algo_state(self.trader1),
+            "algorithm2": self._algo_state(self.trader2),
+            "market_maker": {"balances": self.market_maker},
+            "last_result": self.last_result,
+            "event_log": self.event_log,
+            "last_toss_outcome": self.last_toss_outcome,
+        }
 
     def _coin_state(self) -> dict:
         heads = self.coin.occurrences["heads"]
@@ -96,100 +167,39 @@ class Simulator:
             },
         }
 
-    def state(self) -> dict[str, Any]:
-        """Return a complete view of current simulation state."""
-        market_prices = self._market_prices()
+    def _algo_state(self, trader: Trader) -> dict[str, Any]:
+        try:
+            p_head = trader.estimate_p("heads")
+        except (TypeError, ValueError):
+            p_head = 0.5
 
-        return {
-            "coin": self._coin_state(),
-            "market": {
-                "prices": {
-                    "heads": market_prices["heads"],
-                    "tails": market_prices["tails"],
-                    "heads_derivative": None,
-                    "tails_derivative": None,
-                },
-                "balances": self.amm.balances,
-            },
-            "algorithm1": self._algo_state("algo1", self.trader1),
-            "algorithm2": self._algo_state("algo2", self.trader2),
-            "market_maker": {"balances": self.market_maker},
-            "last_result": self.last_result,
-            "event_log": self.event_log,
-            "last_toss_outcome": self.last_toss_outcome,
-        }
+        try:
+            heads_buy_stake = trader.calculate_buy_money_out("heads", self.amm)
+        except (TypeError, ValueError, ZeroDivisionError, OverflowError):
+            heads_buy_stake = 0.0
+        if not isinstance(heads_buy_stake, (int, float)) or not math.isfinite(heads_buy_stake) or heads_buy_stake <= 0.0:
+            heads_buy_stake = 0.0
 
-    def _draw_outcome(self) -> str:
-        outcome = self.coin.toss()
-        self.trader1.observation(outcome)
-        self.trader2.observation(outcome)
-        self.last_toss_outcome = outcome
-        return outcome
+        try:
+            tails_buy_stake = trader.calculate_buy_money_out("tails", self.amm)
+        except (TypeError, ValueError, ZeroDivisionError, OverflowError):
+            tails_buy_stake = 0.0
+        if not isinstance(tails_buy_stake, (int, float)) or not math.isfinite(tails_buy_stake) or tails_buy_stake <= 0.0:
+            tails_buy_stake = 0.0
 
-    def test_toss(self) -> dict[str, Any]:
-        """Toss coin without resolving the market and return state."""
-        outcome = self._draw_outcome()
-        self._set_result(f"Test toss={outcome}. No market settlement.")
-        return self.state()
+        try:
+            heads_buy_tokens = self.amm.calc_token_out("heads", heads_buy_stake) if heads_buy_stake > 0.0 else 0.0
+        except (TypeError, ValueError, ZeroDivisionError, OverflowError):
+            heads_buy_tokens = 0.0
+        if not isinstance(heads_buy_tokens, (int, float)) or not math.isfinite(heads_buy_tokens) or heads_buy_tokens <= 0.0:
+            heads_buy_tokens = 0.0
 
-    def event_toss(self) -> dict[str, Any]:
-        """Toss coin, resolve market payouts, reseed market, and return state."""
-        outcome = self._draw_outcome()
-        self.amm.resolve(outcome)
-
-        payout = 0.0
-        for trader in (self.trader1, self.trader2):
-            payout_heads = self.amm.payout("heads", trader.balances["heads"])
-            payout_tails = self.amm.payout("tails", trader.balances["tails"])
-            algo_payout = payout_heads + payout_tails
-
-            trader.balances["money"] += algo_payout
-            payout += algo_payout
-            trader.balances["heads"] = 0.0
-            trader.balances["tails"] = 0.0
-
-        self.amm.balances["money"] -= payout
-
-        remaining_money = self.amm.balances["money"]
-        self.market_maker["money"] += remaining_money
-        self.initialize_market()
-
-        self._set_result(
-            f"Event toss={outcome}. Paid out {payout:.2f}. "
-            f"Returned {remaining_money:.2f} to market maker and re-seeded market.",
-        )
-        return self.state()
-
-    def trade(self, algo: str, side: str, action: str) -> dict[str, Any]:
-        """Validate and execute a buy or sell action, then return state."""
-        trader = self._get_trader(algo)
-        if trader is None:
-            self._set_result(f"Invalid algo: {algo}")
-        elif side not in {"heads", "tails"}:
-            self._set_result(f"Invalid side: {side}")
-        elif action not in {"buy", "sell"}:
-            self._set_result(f"Invalid action: {action}")
-        elif action == "buy":
-            stake = self._calc_buy_stake(algo, side)
-            if stake <= 0.0:
-                self._set_result(f"{algo} buy {side}: no edge, no trade.")
-            else:
-                self._execute_buy(algo, side, trader, stake)
-        else:
-            tokens_to_sell = self._calc_sell_tokens(algo, side)
-            if tokens_to_sell <= 0.0:
-                self._set_result(f"{algo} sell {side}: no tokens to sell.")
-            else:
-                self._execute_sell(algo, side, trader, tokens_to_sell)
-        return self.state()
-
-    def _algo_state(self, algo: str, trader: Trader) -> dict[str, Any]:
-        p_head = self._estimate_p_head(algo)
-
-        heads_buy_stake = self._calc_buy_stake(algo, "heads")
-        tails_buy_stake = self._calc_buy_stake(algo, "tails")
-        heads_sell_tokens = self._calc_sell_tokens(algo, "heads")
-        tails_sell_tokens = self._calc_sell_tokens(algo, "tails")
+        try:
+            tails_buy_tokens = self.amm.calc_token_out("tails", tails_buy_stake) if tails_buy_stake > 0.0 else 0.0
+        except (TypeError, ValueError, ZeroDivisionError, OverflowError):
+            tails_buy_tokens = 0.0
+        if not isinstance(tails_buy_tokens, (int, float)) or not math.isfinite(tails_buy_tokens) or tails_buy_tokens <= 0.0:
+            tails_buy_tokens = 0.0
 
         return {
             "estimate": {
@@ -201,128 +211,14 @@ class Simulator:
                 "heads": {
                     "buy": {
                         "stake": heads_buy_stake,
-                        "tokens": self._calc_buy_tokens("heads", heads_buy_stake),
-                    },
-                    "sell": {
-                        "money": self._calc_sell_money("heads", heads_sell_tokens),
-                        "tokens": heads_sell_tokens,
+                        "tokens": heads_buy_tokens,
                     },
                 },
                 "tails": {
                     "buy": {
                         "stake": tails_buy_stake,
-                        "tokens": self._calc_buy_tokens("tails", tails_buy_stake),
-                    },
-                    "sell": {
-                        "money": self._calc_sell_money("tails", tails_sell_tokens),
-                        "tokens": tails_sell_tokens,
+                        "tokens": tails_buy_tokens,
                     },
                 },
             },
         }
-
-    def _market_prices(self) -> dict[str, float]:
-        return self.amm.prices()
-
-    def _calc_buy_tokens(self, side: str, stake: float) -> float:
-        if stake <= 0.0:
-            return 0.0
-        try:
-            return self.amm.preview_buy(side, stake)
-        except ValueError:
-            return 0.0
-
-    def _calc_sell_money(self, side: str, tokens: float) -> float:
-        if tokens <= 0.0:
-            return 0.0
-        try:
-            return self.amm.preview_sell(side, tokens)
-        except ValueError:
-            return 0.0
-
-    def _calc_buy_stake(self, algo: str, side: str) -> float:
-        trader = self._get_trader(algo)
-        if trader is None:
-            return 0.0
-
-        try:
-            stake = trader.calculate_buy_money_out(side, self.amm)
-        except (ValueError, ZeroDivisionError):
-            return 0.0
-        return max(0.0, stake)
-
-    def _calc_sell_tokens(self, algo: str, side: str) -> float:
-        trader = self._get_trader(algo)
-        if trader is None:
-            return 0.0
-
-        held = trader.balances[side]
-        if held <= 0.0:
-            return 0.0
-
-        prices = self._market_prices()
-        p_head = self._estimate_p_head(algo)
-        p = p_head if side == "heads" else (1.0 - p_head)
-        market_p = prices[side]
-        return held if p < market_p else 0.0
-
-    def _execute_buy(self, algo: str, side: str, trader: Trader, stake: float) -> None:
-        if stake <= 0.0:
-            self._set_result(f"{algo} buy {side}: invalid stake.")
-            return
-
-        try:
-            tokens_out = self.amm.buy(side, stake)
-        except ValueError:
-            self._set_result(f"{algo} buy {side}: trade failed.")
-            return
-
-        if tokens_out <= 0.0:
-            self._set_result(f"{algo} buy {side}: trade failed.")
-            return
-
-        trader.balances["money"] -= stake
-        trader.balances[side] += tokens_out
-
-        self._set_result(f"{algo} bought {tokens_out:.4f} {side} tokens for {stake:.2f}.")
-
-    def _execute_sell(self, algo: str, side: str, trader: Trader, tokens_to_sell: float) -> None:
-        tokens_to_sell = min(tokens_to_sell, trader.balances[side])
-        if tokens_to_sell <= 0.0:
-            self._set_result(f"{algo} sell {side}: invalid token amount.")
-            return
-
-        liquidity_cap = min(
-            self.amm.balances.get("money", 0.0),
-            self.amm.balances.get("heads", 0.0),
-            self.amm.balances.get("tails", 0.0),
-        )
-        preview_money = self._calc_sell_money(side, tokens_to_sell)
-        if preview_money <= 0.0 or preview_money > liquidity_cap:
-            self._set_result(f"{algo} sell {side}: insufficient market liquidity.")
-            return
-
-        try:
-            money_out = self.amm.sell(side, tokens_to_sell)
-        except ValueError:
-            self._set_result(f"{algo} sell {side}: trade failed.")
-            return
-
-        if money_out <= 0.0:
-            self._set_result(f"{algo} sell {side}: trade failed.")
-            return
-
-        trader.balances[side] -= tokens_to_sell
-        trader.balances["money"] += money_out
-
-        self._set_result(f"{algo} sold {tokens_to_sell:.4f} {side} tokens for {money_out:.2f}.")
-
-    def _estimate_p_head(self, algo: str) -> float:
-        trader = self._get_trader(algo)
-        if trader is None:
-            return 0.5
-
-        try:
-            return trader.estimate_p("heads")
-        except ValueError:
-            return 0.5
